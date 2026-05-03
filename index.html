@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的网站</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+        }
+
+        header {
+            background-color: #333;
+            color: white;
+            padding: 15px;
+            text-align: center;
+        }
+
+        nav {
+            background-color: #555;
+            padding: 10px;
+            text-align: center;
+        }
+
+        nav a {
+            color: white;
+            margin: 0 15px;
+            text-decoration: none;
+        }
+
+        nav a:hover {
+            text-decoration: underline;
+        }
+
+        .container {
+            padding: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        button {
+            padding: 10px 15px;
+            border: none;
+            background-color: #007BFF;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        footer {
+            background-color: #333;
+            color: white;
+            text-align: center;
+            padding: 10px;
+            margin-top: 20px;
+        }
+
+        /* 响应式 */
+        @media (max-width: 600px) {
+            nav a {
+                display: block;
+                margin: 10px 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>我的网站</h1>
+    <p>一个简单但完整的网页模板</p>
+</header>
+
+<nav>
+    <a href="#">首页</a>
+    <a href="#">功能</a>
+    <a href="#">关于</a>
+</nav>
+
+<div class="container">
+
+    <div class="card">
+        <h2>欢迎 👋</h2>
+        <p>这是你的网页主页，你可以自由修改内容。</p>
+        <button onclick="showMessage()">点我试试</button>
+    </div>
+
+    <div class="card">
+        <h2>简单功能示例</h2>
+        <input type="text" id="inputBox" placeholder="输入点内容">
+        <button onclick="showInput()">提交</button>
+        <p id="output"></p>
+    </div>
+
+</div>
+
+<footer>
+    <p>© 2026 我的第一个网站</p>
+</footer>
+
+<script>
+function showMessage() {
+    alert("欢迎来到你的网站！");
+}
+
+function showInput() {
+    const value = document.getElementById("inputBox").value;
+    document.getElementById("output").innerText = "你输入了：" + value;
+}
+</script>
+
+</body>
+</html>
