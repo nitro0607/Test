@@ -7,7 +7,7 @@ async function search() {
     return;
   }
 
-  resultDiv.innerText = "正在思考中...";
+  resultDiv.innerText = "🤖 正在思考中...";
 
   try {
     const res = await fetch("/api/search", {
@@ -22,6 +22,6 @@ async function search() {
 
     resultDiv.innerText = data.result;
   } catch (err) {
-    resultDiv.innerText = "请求失败，请检查网络或配置";
+    resultDiv.innerText = "❌ 请求失败，请检查网络";
   }
 }
