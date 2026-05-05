@@ -1,68 +1,90 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 import requests
 from bs4 import BeautifulSoup
-from sumy.parsers.plaintext import PlaintextParser
-from sumy.nlp.tokenizers import Tokenizer
-from sumy.summarizers.text_rank import TextRankSummarizer
+import os
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
+# 首页
+@app.route("/")
+def index():
+    return render_template("index.html")
 
-def split_sentences(text):
-    text = text.replace('。', '。\n').replace('！', '！\n').replace('？', '？\n')
-    sentences = [s.strip() for s in text.splitlines() if s.strip()]
-    return sentences
-
-
-def simple_summary(text, max_sentences=3):
-    sentences = split_sentences(text)
-    return ''.join(sentences[:max_sentences])
-
-
-def summarize_text(text, sentence_count=4):
+# 👉 AI总结函数（Kimi）
+def ai_summary(text):
     try:
-        parser = PlaintextParser.from_string(text, Tokenizer('chinese'))
-        summarizer = TextRankSummarizer()
-        summary_sentences = summarizer(parser.document, sentence_count)
-        return ''.join(str(s) for s in summary_sentences)
-    except:
-        return simple_summary(text)
+        response = requests.post(
+            "https://api.moonshot.cn/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {os.environ.get('KIMI_API_KEY')}",
+                "Content-Type": "application/json"
+            },
+            json={
+                "model": "moonshot-v1-8k",
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": "你是一个专业的信息整理助手。"
+                    },
+                    {
+                        "role": "user",
+                        "content": f"""
+请对以下网页内容进行总结：
+1. 用简洁中文
+2. 提取核心观点
+3. 分点输出
+4. 控制在200字以内
+
+内容：
+{text[:4000]}
+"""
+                    }
+                ],
+                "temperature": 0.3
+            },
+            timeout=20
+        )
+
+        data = response.json()
+        return data["choices"][0]["message"]["content"]
+
+    except Exception as e:
+        return f"AI总结失败：{str(e)}"
 
 
-def extract_main_info(url):
+# 👉 抓网页 + AI总结
+@app.route("/api/summarize", methods=["POST"])
+def summarize():
+    data = request.get_json()
+    url = data.get("url")
+
     try:
-        response = requests.get(url, timeout=10)
-        soup = BeautifulSoup(response.content, 'html.parser')
+        headers = {
+            "User-Agent": "Mozilla/5.0"
+        }
+        response = requests.get(url, headers=headers, timeout=10)
+        response.raise_for_status()
+
+        soup = BeautifulSoup(response.text, "html.parser")
 
         title = soup.title.string if soup.title else "无标题"
 
-        paragraphs = soup.find_all('p')
-        main_text = ' '.join([p.get_text() for p in paragraphs])
-        main_text = ' '.join(main_text.split())
+        paragraphs = soup.find_all("p")
+        main_text = " ".join([p.get_text() for p in paragraphs])
+        main_text = " ".join(main_text.split())
 
-        summary = summarize_text(main_text)
+        summary = ai_summary(main_text)
 
-        return {
+        return jsonify({
             "title": title,
             "summary": summary
-        }
+        })
+
     except Exception as e:
-        return {"error": str(e)}
+        return jsonify({"error": str(e)})
 
 
-@app.route('/api/summarize', methods=['POST'])
-def summarize():
-    data = request.json
-    url = data.get("url")
-
-    if not url:
-        return jsonify({"error": "缺少URL"}), 400
-
-    result = extract_main_info(url)
-    return jsonify(result)
-
-
-if __name__ == '__main__':
-    app.run()
+if __name__ == "__main__":
+    app.run(debug=True)
