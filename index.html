@@ -6,77 +6,164 @@
 
   <style>
     body {
-      font-family: Arial;
-      max-width: 1000px;
+      margin: 0;
+      font-family: "Segoe UI", Arial;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #333;
+    }
+
+    .app {
+      max-width: 1100px;
       margin: 40px auto;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: white;
+      margin-bottom: 30px;
     }
 
     .container {
       display: flex;
       gap: 20px;
+      flex-wrap: wrap;
     }
 
     .panel {
       flex: 1;
-      background: #f5f5f5;
-      padding: 15px;
-      border-radius: 10px;
+      min-width: 320px;
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    }
+
+    .panel h2 {
+      margin-top: 0;
     }
 
     input {
-      width: 70%;
-      padding: 8px;
+      width: 65%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      outline: none;
+      font-size: 14px;
+    }
+
+    input:focus {
+      border-color: #667eea;
     }
 
     button {
-      padding: 8px 15px;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 8px;
+      background: #667eea;
+      color: white;
+      cursor: pointer;
+      transition: 0.2s;
+      margin-left: 5px;
+    }
+
+    button:hover {
+      background: #5563c1;
     }
 
     .result {
-      margin-top: 10px;
-      height: 300px;
+      margin-top: 15px;
+      height: 320px;
       overflow-y: auto;
       white-space: pre-wrap;
-      background: #fff;
-      padding: 10px;
-      border-radius: 5px;
+      background: #f9f9f9;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    footer {
+      margin-top: 40px;
+      text-align: center;
+      color: white;
+      font-size: 14px;
+      opacity: 0.9;
+    }
+
+    footer a {
+      color: #ffd86b;
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
     }
   </style>
 </head>
 
 <body>
 
-<h1>🔍 SearchWUT</h1>
+<div class="app">
 
-<div class="container">
+  <h1>🔍 SearchWUT</h1>
 
-  <!-- 🌐 网页总结 -->
-  <div class="panel">
-    <h2>🌐 网页总结</h2>
-    <input id="urlInput" placeholder="输入网页URL..." />
-    <button onclick="summarize()">分析</button>
-    <div id="result1" class="result"></div>
+  <div class="container">
+
+    <!-- 🌐 网页总结 -->
+    <div class="panel">
+      <h2>🌐 网页总结</h2>
+      <input id="urlInput" placeholder="输入网页URL..." />
+      <button onclick="summarize()">分析</button>
+      <div id="result1" class="result"></div>
+    </div>
+
+    <!-- 💬 AI聊天 -->
+    <div class="panel">
+      <h2>💬 AI聊天</h2>
+      <input id="chatInput" placeholder="输入你的问题..." />
+      <button onclick="chat()">发送</button>
+      <div id="result2" class="result"></div>
+    </div>
+
   </div>
 
-  <!-- 💬 聊天 -->
-  <div class="panel">
-    <h2>💬 AI聊天</h2>
-    <input id="chatInput" placeholder="输入问题..." />
-    <button onclick="chat()">发送</button>
-    <div id="result2" class="result"></div>
-  </div>
+  <!-- 👇 页脚（你的信息） -->
+  <footer>
+    <p><strong>🌐 AI智能搜索引擎</strong></p>
+    <p>👨‍💻 作者：Nitro0607</p>
+
+    <p>
+      📧 Email：
+      <a href="mailto:1295422173@qq.com">1295422173@qq.com</a>
+    </p>
+
+    <p>
+      💻 GitHub：
+      <a href="https://github.com/nitro0607" target="_blank">
+        github.com/nitro0607
+      </a>
+    </p>
+
+    <p style="margin-top:10px;">
+      © 2026 SearchWUT
+    </p>
+  </footer>
 
 </div>
 
 <script>
 const API_BASE = "https://test-1-5r5k.onrender.com";
 
-// =====================
 // 🌐 网页总结
-// =====================
 async function summarize() {
   const input = document.getElementById("urlInput").value.trim();
   const result = document.getElementById("result1");
+
+  if (!input) {
+    result.innerText = "请输入URL";
+    return;
+  }
 
   result.innerText = "🧠 分析中...\n";
 
@@ -99,11 +186,9 @@ async function summarize() {
 }
 
 
-// =====================
 // 💬 多轮聊天
-// =====================
 let messages = [
-  { role: "system", content: "你是一个AI助手" }
+  { role: "system", content: "你是一个有帮助的AI助手" }
 ];
 
 async function chat() {
