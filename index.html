@@ -2,24 +2,115 @@
 <html lang="zh">
 <head>
   <meta charset="UTF-8">
-  <title>SearchWUT</title>
-  <link rel="stylesheet" href="style.css">
+  <title>🔍SearchWUT</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+      background: #f7f9fc;
+    }
+
+    .container {
+      margin-top: 80px;
+    }
+
+    h1 {
+      font-size: 32px;
+      color: #333;
+    }
+
+    input {
+      width: 320px;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    button {
+      padding: 10px 16px;
+      font-size: 16px;
+      margin-left: 8px;
+      border: none;
+      border-radius: 6px;
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    #result {
+      margin: 30px auto;
+      width: 60%;
+      text-align: left;
+      white-space: pre-wrap;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    footer {
+      margin-top: 80px;
+      padding: 25px;
+      background: linear-gradient(to right, #f8f9fa, #e9ecef);
+      border-top: 1px solid #ddd;
+      font-size: 14px;
+      color: #444;
+    }
+
+    footer a {
+      color: #007bff;
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
 </head>
+
 <body>
 
-<div class="app">
+  <div class="container">
+    <h1>SearchWUT</h1>
 
-  <h1 class="title">SearchWUT</h1>
-
-  <div class="search-box">
-    <input id="input" type="text" placeholder="输入网页url或你的问题..." />
+    <input id="input" type="text" placeholder="输入网址（https://...）">
     <button onclick="search()">搜索</button>
+
+    <pre id="result"></pre>
   </div>
 
-  <div id="result" class="result-card"></div>
+  <!-- 底部信息区 -->
+  <footer>
+    <p><strong>🌐 AI智能搜索引擎</strong></p>
 
-</div>
+    <p>👨‍💻 Nitro0607</p>
 
-<script src="script.js"></script>
+    <p>
+      📧 Email：
+      <a href="mailto:1295422173@qq.com">1295422173@qq.com</a>
+    </p>
+
+    <p>
+      💻 GitHub：
+      <a href="https://github.com/nitro0607" target="_blank">
+        https://github.com/nitro0607
+      </a>
+    </p>
+
+    <p style="margin-top:10px; color:#888;">
+      © 2026 All Rights Reserved
+    </p>
+  </footer>
+
+  <script src="/static/script.js"></script>
+
 </body>
 </html>
