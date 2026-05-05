@@ -6,8 +6,6 @@ import os
 import time
 
 app = Flask(__name__)
-
-# ✅ CORS
 CORS(app)
 
 # 首页
@@ -16,7 +14,9 @@ def index():
     return render_template("index.html")
 
 
-# ✅ AI总结（流式版）
+# =========================
+# 🌐 网页总结（流式）
+# =========================
 def ai_summary_stream(text):
     try:
         api_key = os.environ.get("KIMI_API_KEY")
@@ -34,30 +34,14 @@ def ai_summary_stream(text):
             json={
                 "model": "moonshot-v1-auto",
                 "messages": [
-                    {
-                        "role": "system",
-                        "content": "你是一个专业的信息总结助手"
-                    },
-                    {
-                        "role": "user",
-                        "content": f"""
-请总结以下网页内容：
-1. 用简洁中文
-2. 分点输出（最多5点）
-3. 控制在200字以内
-
-内容：
-{text[:2000]}
-"""
-                    }
-                ],
-                "temperature": 0.3
+                    {"role": "system", "content": "你是一个信息总结助手"},
+                    {"role": "user", "content": f"请总结以下内容：\n{text[:2000]}"}
+                ]
             },
             timeout=20
         )
 
         data = response.json()
-        print("Kimi返回：", data)
 
         if "choices" not in data:
             yield f"❌ AI接口异常：{data}"
@@ -65,7 +49,6 @@ def ai_summary_stream(text):
 
         full_text = data["choices"][0]["message"]["content"]
 
-        # ✅ 模拟流式输出（逐字）
         for char in full_text:
             yield char
             time.sleep(0.01)
@@ -74,7 +57,7 @@ def ai_summary_stream(text):
         yield f"❌ AI总结失败：{str(e)}"
 
 
-# ✅ API（流式返回）
+# 🌐 API：网页总结
 @app.route("/api/summarize", methods=["POST", "OPTIONS"])
 def summarize():
     if request.method == "OPTIONS":
@@ -87,10 +70,7 @@ def summarize():
         return jsonify({"error": "未提供URL"})
 
     try:
-        headers = {
-            "User-Agent": "Mozilla/5.0"
-        }
-
+        headers = {"User-Agent": "Mozilla/5.0"}
         response = requests.get(url, headers=headers, timeout=10)
         response.raise_for_status()
 
@@ -102,10 +82,6 @@ def summarize():
         main_text = " ".join([p.get_text() for p in paragraphs])
         main_text = " ".join(main_text.split())
 
-        if not main_text:
-            return jsonify({"error": "未能提取到网页内容"})
-
-        # 👉 先输出标题，再流式输出摘要
         def generate():
             yield f"📄 标题：{title}\n\n🧠 AI总结：\n"
             for chunk in ai_summary_stream(main_text):
@@ -117,7 +93,58 @@ def summarize():
         return jsonify({"error": str(e)})
 
 
-# ✅ 强制CORS头（保险）
+# =========================
+# 💬 多轮对话（流式）
+# =========================
+@app.route("/api/chat", methods=["POST", "OPTIONS"])
+def chat():
+    if request.method == "OPTIONS":
+        return '', 200
+
+    data = request.get_json()
+    messages = data.get("messages")
+
+    if not messages:
+        return jsonify({"error": "未提供消息"})
+
+    def generate():
+        try:
+            api_key = os.environ.get("KIMI_API_KEY")
+
+            response = requests.post(
+                "https://api.moonshot.cn/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "model": "moonshot-v1-auto",
+                    "messages": messages
+                },
+                timeout=20
+            )
+
+            data = response.json()
+
+            if "choices" not in data:
+                yield "❌ AI接口异常"
+                return
+
+            full_text = data["choices"][0]["message"]["content"]
+
+            for char in full_text:
+                yield char
+                time.sleep(0.01)
+
+        except Exception as e:
+            yield f"❌ 错误：{str(e)}"
+
+    return Response(generate(), content_type='text/plain; charset=utf-8')
+
+
+# =========================
+# ✅ CORS兜底
+# =========================
 @app.after_request
 def after_request(response):
     response.headers['Access-Control-Allow-Origin'] = '*'
@@ -126,6 +153,5 @@ def after_request(response):
     return response
 
 
-# 本地运行
 if __name__ == "__main__":
     app.run(debug=True)
