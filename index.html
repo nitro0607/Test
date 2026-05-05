@@ -17,7 +17,8 @@
   </div>
 
   <div id="result" class="result-card"></div>
- <footer>
+
+  <footer>
     <p><strong>🌐 AI智能搜索引擎</strong></p>
 
     <p>👨‍💻 Nitro0607</p>
@@ -38,8 +39,56 @@
       © 2026 All Rights Reserved
     </p>
   </footer>
+
 </div>
 
-<script src="script.js"></script>
+<!-- ✅ 直接内嵌 JS（避免 script.js 路径问题） -->
+<script>
+async function search() {
+  const input = document.getElementById("input").value.trim();
+  const resultDiv = document.getElementById("result");
+
+  if (!input) {
+    resultDiv.innerText = "⚠️ 请输入内容";
+    return;
+  }
+
+  // ✅ loading 状态
+  resultDiv.innerText = "🧠 AI正在思考中...\n\n";
+
+  try {
+    const res = await fetch("https://test-1-5r5k.onrender.com/api/summarize", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ url: input })
+    });
+
+    if (!res.ok) {
+      resultDiv.innerText = "❌ 服务器错误：" + res.status;
+      return;
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder("utf-8");
+
+    // 清空再开始流式写入
+    resultDiv.innerText = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value);
+      resultDiv.innerText += chunk;
+    }
+
+  } catch (err) {
+    resultDiv.innerText = "❌ 请求失败，请检查后端或网络";
+  }
+}
+</script>
+
 </body>
 </html>
