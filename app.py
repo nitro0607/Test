@@ -14,6 +14,8 @@ from crawler import crawl_campus_news
 
 from database import init_db, get_news
 
+from urllib.parse import urljoin
+
 
 app = Flask(__name__)
 
@@ -33,7 +35,7 @@ scheduler = BackgroundScheduler()
 
 scheduler.add_job(
     crawl_campus_news,
-    'interval',
+    "interval",
     minutes=30
 )
 
@@ -46,35 +48,59 @@ def index():
     return render_template("index.html")
 
 
-# =========================
-# AI聊天
-# =========================
+# ====================================
+# Kimi AI聊天
+# ====================================
 def kimi_chat(messages):
 
     api_key = os.environ.get("KIMI_API_KEY")
 
-    response = requests.post(
-        "https://api.moonshot.cn/v1/chat/completions",
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json"
-        },
-        json={
-            "model": "moonshot-v1-auto",
-            "messages": messages,
-            "temperature": 0.7
-        },
-        timeout=30
-    )
+    if not api_key:
+        return "未配置 KIMI_API_KEY"
 
-    data = response.json()
+    try:
 
-    return data["choices"][0]["message"]["content"]
+        response = requests.post(
+            "https://api.moonshot.cn/v1/chat/completions",
+
+            headers={
+
+                "Authorization":
+                    f"Bearer {api_key}",
+
+                "Content-Type":
+                    "application/json"
+            },
+
+            json={
+
+                "model":
+                    "moonshot-v1-auto",
+
+                "messages":
+                    messages,
+
+                "temperature":
+                    0.7
+            },
+
+            timeout=30
+        )
+
+        data = response.json()
+
+        print("Kimi返回：", data)
+
+        return data["choices"][0]["message"]["content"]
+
+    except Exception as e:
+
+        return f"AI请求失败：{str(e)}"
 
 
-# =========================
+# ====================================
 # AI聊天接口
-# =========================
+# ====================================
 @app.route("/api/chat", methods=["POST"])
 def chat():
 
@@ -85,13 +111,14 @@ def chat():
     reply = kimi_chat(messages)
 
     return jsonify({
+
         "reply": reply
     })
 
 
-# =========================
-# URL抓取 + AI总结
-# =========================
+# ====================================
+# URL分析接口
+# ====================================
 @app.route("/api/summarize", methods=["POST"])
 def summarize():
 
@@ -105,108 +132,172 @@ def summarize():
             "error": "未提供URL"
         })
 
-    headers = {
-        "User-Agent": "Mozilla/5.0"
-    }
+    try:
 
-    response = requests.get(
-        url,
-        headers=headers,
-        timeout=10
-    )
+        headers = {
+            "User-Agent":
+                "Mozilla/5.0"
+        }
 
-    response.raise_for_status()
+        response = requests.get(
+            url,
+            headers=headers,
+            timeout=15
+        )
 
-    soup = BeautifulSoup(
-        response.text,
-        "html.parser"
-    )
+        response.raise_for_status()
 
-    title = (
-        soup.title.string.strip()
-        if soup.title
-        else "无标题"
-    )
+        soup = BeautifulSoup(
+            response.text,
+            "html.parser"
+        )
 
-    paragraphs = soup.find_all("p")
+        # 标题
+        title = (
 
-    content = " ".join(
-        [p.get_text() for p in paragraphs]
-    )
+            soup.title.string.strip()
 
-    content = " ".join(content.split())
+            if soup.title
 
-    # 页面链接
-    links = []
+            else "无标题"
+        )
 
-    for a in soup.find_all("a"):
+        # 正文
+        paragraphs = soup.find_all("p")
 
-        href = a.get("href")
+        content = " ".join(
+            [p.get_text() for p in paragraphs]
+        )
 
-        text = a.get_text(strip=True)
+        content = " ".join(content.split())
 
-        if href:
+        if not content:
+
+            content = soup.get_text()
+
+        content = content[:5000]
+
+
+        # ====================================
+        # AI总结
+        # ====================================
+        summary = kimi_chat([
+
+            {
+                "role": "system",
+
+                "content":
+                    "你是网页总结助手"
+            },
+
+            {
+                "role": "user",
+
+                "content": f"""
+
+请总结以下网页内容：
+
+要求：
+
+1. 使用中文
+2. 提取重点
+3. 分点输出
+4. 简洁清晰
+
+内容：
+
+{content}
+
+"""
+            }
+        ])
+
+
+        # ====================================
+        # 页面链接提取
+        # ====================================
+        links = []
+
+        for a in soup.find_all("a"):
+
+            href = a.get("href")
+
+            text = a.get_text(strip=True)
+
+            if not href:
+                continue
+
+            full_url = urljoin(url, href)
 
             links.append({
-                "text": text,
-                "url": href
+
+                "text":
+                    text if text else full_url,
+
+                "url":
+                    full_url
             })
 
-    # 附件提取
-    attachments = []
 
-    for a in soup.find_all("a"):
+        # ====================================
+        # 附件提取
+        # ====================================
+        attachments = []
 
-        href = a.get("href")
+        file_exts = [
 
-        if not href:
-            continue
+            ".pdf",
+            ".doc",
+            ".docx",
+            ".xls",
+            ".xlsx",
+            ".zip",
+            ".rar",
+            ".ppt",
+            ".pptx"
+        ]
 
-        if any(
-            href.lower().endswith(ext)
-            for ext in [
-                ".pdf",
-                ".doc",
-                ".docx",
-                ".xls",
-                ".xlsx",
-                ".zip"
-            ]
-        ):
+        for a in soup.find_all("a"):
 
-            attachments.append(href)
+            href = a.get("href")
 
-    # AI总结
-    summary = kimi_chat([
-        {
-            "role": "system",
-            "content": "你是网页信息总结助手"
-        },
-        {
-            "role": "user",
-            "content": f"""
-请总结以下内容：
+            if not href:
+                continue
 
-{content[:3000]}
-"""
-        }
-    ])
+            if any(
 
-    return jsonify({
+                href.lower().endswith(ext)
 
-        "title": title,
+                for ext in file_exts
+            ):
 
-        "summary": summary,
+                full_url = urljoin(url, href)
 
-        "links": links[:20],
-
-        "attachments": attachments[:20]
-    })
+                attachments.append(full_url)
 
 
-# =========================
+        return jsonify({
+
+            "title": title,
+
+            "summary": summary,
+
+            "links": links[:30],
+
+            "attachments": attachments[:30]
+        })
+
+    except Exception as e:
+
+        return jsonify({
+
+            "error": str(e)
+        })
+
+
+# ====================================
 # 校园资讯接口
-# =========================
+# ====================================
 @app.route("/api/news")
 def news():
 
@@ -232,9 +323,9 @@ def news():
     return jsonify(result)
 
 
-# =========================
-# CORS
-# =========================
+# ====================================
+# CORS修复
+# ====================================
 @app.after_request
 def after_request(response):
 
@@ -254,4 +345,5 @@ def after_request(response):
 
 
 if __name__ == "__main__":
+
     app.run(debug=True)
