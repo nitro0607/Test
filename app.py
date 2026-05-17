@@ -145,8 +145,15 @@ def summarize():
 
         response.raise_for_status()
 
+        # ====================================
+        # 自动识别网页编码（乱码修复）
+        # ====================================
+        response.encoding = response.apparent_encoding
+
+        html = response.text
+
         soup = BeautifulSoup(
-            response.text,
+            html,
             "html.parser"
         )
 
@@ -162,7 +169,12 @@ def summarize():
         # ====================================
         # 提取正文
         # ====================================
-        paragraphs = soup.find_all("p")
+        article = soup.find("article")
+
+        if article:
+            paragraphs = article.find_all("p")
+        else:
+            paragraphs = soup.find_all("p")
 
         content = " ".join(
             [p.get_text() for p in paragraphs]
@@ -174,7 +186,6 @@ def summarize():
             content = soup.get_text()
 
         content = content[:5000]
-
 
         # ====================================
         # AI总结
@@ -259,7 +270,7 @@ def summarize():
             if not text:
                 text = full_url
 
-            # 过滤无意义文本
+            # 过滤太短文字
             if len(text.strip()) <= 1:
                 continue
 
@@ -272,7 +283,7 @@ def summarize():
 
 
         # ====================================
-        # 页面附件提取（加强版）
+        # 页面附件提取
         # ====================================
         attachments = []
 
@@ -319,8 +330,7 @@ def summarize():
 
                 continue
 
-
-            # 学校资源系统
+            # download类资源
             if any(
 
                 key in full_url.lower()
@@ -344,7 +354,6 @@ def summarize():
                         full_url
                 })
 
-
         # 去重
         unique = []
 
@@ -362,13 +371,15 @@ def summarize():
 
 
         # ====================================
-        # 页面图片提取
+        # 页面图片提取（优化版）
         # ====================================
         images = []
 
         seen_images = set()
 
-        for img in soup.find_all("img"):
+        img_list = soup.find_all("img")
+
+        for img in img_list:
 
             src = img.get("src")
 
@@ -377,6 +388,7 @@ def summarize():
 
             full_img = urljoin(url, src)
 
+            # 过滤无效图片
             if not (
                 full_img.startswith("http://")
                 or
@@ -384,10 +396,26 @@ def summarize():
             ):
                 continue
 
+            # 去重
             if full_img in seen_images:
                 continue
 
             seen_images.add(full_img)
+
+            # 过滤小图标/logo
+            width = img.get("width")
+            height = img.get("height")
+
+            try:
+
+                if width and int(width) < 80:
+                    continue
+
+                if height and int(height) < 80:
+                    continue
+
+            except:
+                pass
 
             images.append(full_img)
 
