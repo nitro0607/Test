@@ -446,27 +446,18 @@ def summarize():
 @app.route("/api/news")
 def news():
 
-    news_list = get_news()
+    try:
 
-    result = []
+        # 实时抓取校园资讯
+        news_list = crawl_campus_news()
 
-    for item in news_list:
+        return jsonify(news_list)
 
-        result.append({
+    except Exception as e:
 
-            "id": item[0],
-
-            "title": item[1],
-
-            "summary": item[2],
-
-            "url": item[3],
-
-            "time": item[4]
+        return jsonify({
+            "error": str(e)
         })
-
-    return jsonify(result)
-
 
 # ====================================
 # CORS修复
