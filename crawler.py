@@ -2,108 +2,72 @@ import requests
 
 from bs4 import BeautifulSoup
 
+from urllib.parse import urljoin
+
 from database import save_news
 
 
-# 校园网站列表
-CAMPUS_SITES = [
-
-    "https://i.whut.edu.cn/xxtg/",
-
-]
-
-
-def ai_summary(text):
-
-    if len(text) <= 200:
-        return text
-
-    return text[:200] + "..."
-
-
-def crawl_page(url):
-
-    headers = {
-        "User-Agent": "Mozilla/5.0"
-    }
-
-    response = requests.get(
-        url,
-        headers=headers,
-        timeout=10
-    )
-
-    response.raise_for_status()
-
-    return response.text
+NEWS_URL = "https://news.whut.edu.cn/"
 
 
 def crawl_campus_news():
 
-    headers = {
-        "User-Agent": "Mozilla/5.0"
-    }
+    try:
 
-    for site in CAMPUS_SITES:
+        headers = {
+            "User-Agent": "Mozilla/5.0"
+        }
 
-        try:
+        response = requests.get(
+            NEWS_URL,
+            headers=headers,
+            timeout=15
+        )
 
-            html = crawl_page(site)
+        response.raise_for_status()
 
-            soup = BeautifulSoup(
-                html,
-                "html.parser"
+        response.encoding = response.apparent_encoding
+
+        soup = BeautifulSoup(
+            response.text,
+            "html.parser"
+        )
+
+        news_items = soup.find_all("a")
+
+        count = 0
+
+        for item in news_items:
+
+            title = item.get_text(strip=True)
+
+            href = item.get("href")
+
+            if not title:
+                continue
+
+            if not href:
+                continue
+
+            if len(title) < 8:
+                continue
+
+            full_url = urljoin(
+                NEWS_URL,
+                href
             )
 
-            links = soup.find_all("a")[:20]
+            save_news(
+                title,
+                "武汉理工大学校园资讯",
+                full_url
+            )
 
-            for item in links:
+            count += 1
 
-                title = item.get_text(strip=True)
+            if count >= 20:
+                break
 
-                href = item.get("href")
+    except Exception as e:
 
-                if not href:
-                    continue
-
-                if href.startswith("/"):
-                    href = site.rstrip("/") + href
-
-                try:
-
-                    article_html = crawl_page(href)
-
-                    article_soup = BeautifulSoup(
-                        article_html,
-                        "html.parser"
-                    )
-
-                    paragraphs = article_soup.find_all("p")
-
-                    content = " ".join(
-                        [p.get_text() for p in paragraphs]
-                    )
-
-                    content = " ".join(content.split())
-
-                    if len(content) < 100:
-                        continue
-
-                    summary = ai_summary(content)
-
-                    save_news(
-                        title,
-                        summary,
-                        content,
-                        href
-                    )
-
-                    print("已保存：", title)
-
-                except Exception as e:
-
-                    print("文章抓取失败：", str(e))
-
-        except Exception as e:
-
-            print("校园抓取失败：", str(e))
+        print("校园资讯抓取失败：", e)
