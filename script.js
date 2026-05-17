@@ -10,6 +10,8 @@ async function loadNews() {
   const list =
     document.getElementById("news-list");
 
+  if (!list) return;
+
   list.innerHTML = "加载中...";
 
   try {
@@ -87,7 +89,6 @@ async function analyzeUrl() {
     );
 
     const data = await response.json();
-
 
     if (data.error) {
 
@@ -185,6 +186,41 @@ async function analyzeUrl() {
       });
 
       html += `</div>`;
+    }
+
+
+    // ====================================
+    // 页面图片
+    // ====================================
+    if (
+      data.images &&
+      data.images.length > 0
+    ) {
+
+      html += `
+
+        <div class="image-box">
+
+        <h3>🖼 页面图片</h3>
+
+        <div class="image-grid">
+      `;
+
+      data.images.forEach(img => {
+
+        html += `
+
+          <img
+            src="${img}"
+            class="preview-image"
+          >
+        `;
+      });
+
+      html += `
+        </div>
+        </div>
+      `;
     }
 
     result.innerHTML = html;
@@ -295,7 +331,5 @@ async function sendMessage() {
 }
 
 
-// ====================================
 // 初始化
-// ====================================
 loadNews();
