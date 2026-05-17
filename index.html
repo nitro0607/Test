@@ -1,254 +1,105 @@
 <!DOCTYPE html>
 <html lang="zh">
+
 <head>
-<meta charset="UTF-8">
-<title>SearchWUT</title>
 
-<style>
+  <meta charset="UTF-8">
 
-body{
-    margin:0;
-    font-family:Arial;
-    background:linear-gradient(135deg,#667eea,#764ba2);
-}
+  <title>SearchWUT</title>
 
-.app{
-    max-width:1100px;
-    margin:40px auto;
-    padding:20px;
-}
+  <link rel="stylesheet" href="/static/style.css">
 
-h1{
-    text-align:center;
-    color:white;
-}
-
-.container{
-    display:flex;
-    gap:20px;
-    flex-wrap:wrap;
-}
-
-.panel{
-    flex:1;
-    min-width:320px;
-    background:white;
-    padding:20px;
-    border-radius:12px;
-    box-shadow:0 10px 20px rgba(0,0,0,0.2);
-}
-
-input{
-    width:70%;
-    padding:10px;
-    border-radius:8px;
-    border:1px solid #ccc;
-}
-
-button{
-    padding:10px 15px;
-    border:none;
-    border-radius:8px;
-    background:#667eea;
-    color:white;
-    cursor:pointer;
-}
-
-button:hover{
-    background:#4f5bd5;
-}
-
-.result{
-    margin-top:15px;
-    height:420px;
-    overflow-y:auto;
-    white-space:pre-wrap;
-    background:#f5f5f5;
-    padding:10px;
-    border-radius:8px;
-    line-height:1.6;
-}
-
-footer{
-    margin-top:40px;
-    text-align:center;
-    color:white;
-}
-
-footer a{
-    color:#ffd86b;
-}
-
-</style>
 </head>
 
 <body>
 
 <div class="app">
 
-<h1>🔍 SearchWUT</h1>
+  <h1 class="title">SearchWUT</h1>
 
-<div class="container">
 
-    <!-- 🌐 URL分析 -->
-    <div class="panel">
-        <h2>🌐 URL分析器</h2>
+  <!-- 校园资讯 -->
+  <div class="section">
 
-        <input id="urlInput" placeholder="输入网页URL...">
-        <button onclick="summarize()">分析</button>
+    <h2>🏫 校园资讯</h2>
 
-        <div id="result1" class="result"></div>
+    <div id="news-list"></div>
+
+  </div>
+
+
+  <!-- URL分析 -->
+  <div class="section">
+
+    <h2>🌐 URL网页分析</h2>
+
+    <div class="search-box">
+
+      <input
+        id="url-input"
+        type="text"
+        placeholder="输入网页URL"
+      >
+
+      <button onclick="analyzeUrl()">
+        分析
+      </button>
+
     </div>
 
-    <!-- 💬 AI聊天 -->
-    <div class="panel">
-        <h2>💬 AI聊天</h2>
+    <div id="url-result"></div>
 
-        <input id="chatInput" placeholder="输入问题...">
-        <button onclick="chat()">发送</button>
+  </div>
 
-        <div id="result2" class="result"></div>
+
+  <!-- AI聊天 -->
+  <div class="section">
+
+    <h2>🤖 AI聊天</h2>
+
+    <div class="search-box">
+
+      <input
+        id="chat-input"
+        type="text"
+        placeholder="输入问题"
+      >
+
+      <button onclick="sendMessage()">
+        发送
+      </button>
+
     </div>
+
+    <div id="chat-box"></div>
+
+  </div>
+
+
+  <!-- 页脚 -->
+  <footer>
+
+    <p>👨‍💻 Nitro0607</p>
+
+    <p>
+      📧
+      <a href="mailto:1295422173@qq.com">
+        1295422173@qq.com
+      </a>
+    </p>
+
+    <p>
+      💻
+      <a href="https://github.com/nitro0607">
+        GitHub
+      </a>
+    </p>
+
+  </footer>
 
 </div>
 
-<footer>
-
-<p><strong>🌐 SearchWUT</strong></p>
-
-<p>👨‍💻 作者：Nitro0607</p>
-
-<p>
-📧 Email：
-<a href="mailto:1295422173@qq.com">
-1295422173@qq.com
-</a>
-</p>
-
-<p>
-💻 GitHub：
-<a href="https://github.com/nitro0607" target="_blank">
-github.com/nitro0607
-</a>
-</p>
-
-<p>© 2026 SearchWUT</p>
-
-</footer>
-
-</div>
-
-<script>
-
-const API_BASE = "https://test-1-5r5k.onrender.com";
-
-// ====================
-// 🌐 URL分析
-// ====================
-async function summarize(){
-
-    const input=document.getElementById("urlInput").value.trim();
-    const result=document.getElementById("result1");
-
-    if(!input){
-        result.innerText="请输入URL";
-        return;
-    }
-
-    result.innerText="🧠 分析中...\n";
-
-    const res=await fetch(API_BASE+"/api/summarize",{
-        method:"POST",
-        headers:{
-            "Content-Type":"application/json"
-        },
-        body:JSON.stringify({
-            url:input
-        })
-    });
-
-    const reader=res.body.getReader();
-    const decoder=new TextDecoder();
-
-    result.innerText="";
-
-    while(true){
-
-        const {done,value}=await reader.read();
-
-        if(done) break;
-
-        result.innerText+=decoder.decode(value);
-    }
-}
-
-
-// ====================
-// 💬 AI聊天
-// ====================
-
-let messages=[
-    {
-        role:"system",
-        content:"你是一个有帮助的AI助手"
-    }
-];
-
-async function chat(){
-
-    const input=document.getElementById("chatInput");
-    const result=document.getElementById("result2");
-
-    const text=input.value.trim();
-
-    if(!text) return;
-
-    messages.push({
-        role:"user",
-        content:text
-    });
-
-    result.innerText+="\n👤："+text+"\n🤖：";
-
-    input.value="";
-
-    const res=await fetch(API_BASE+"/api/chat",{
-        method:"POST",
-        headers:{
-            "Content-Type":"application/json"
-        },
-        body:JSON.stringify({
-            messages:messages
-        })
-    });
-
-    const reader=res.body.getReader();
-    const decoder=new TextDecoder();
-
-    let reply="";
-
-    while(true){
-
-        const {done,value}=await reader.read();
-
-        if(done) break;
-
-        const chunk=decoder.decode(value);
-
-        reply+=chunk;
-
-        result.innerText+=chunk;
-    }
-
-    messages.push({
-        role:"assistant",
-        content:reply
-    });
-
-    result.innerText+="\n\n";
-}
-
-</script>
+<script src="/static/script.js"></script>
 
 </body>
 </html>
