@@ -4,15 +4,11 @@ from bs4 import BeautifulSoup
 
 from urllib.parse import urljoin
 
-from database import save_news
-
 
 NEWS_URL = "https://news.whut.edu.cn/"
 
 
 def crawl_campus_news():
-
-    print("开始抓取校园资讯")
 
     try:
 
@@ -36,11 +32,13 @@ def crawl_campus_news():
             "html.parser"
         )
 
-        news_items = soup.find_all("a")
+        news_items = []
 
-        count = 0
+        links = soup.find_all("a")
 
-        for item in news_items:
+        seen = set()
+
+        for item in links:
 
             title = item.get_text(strip=True)
 
@@ -52,18 +50,15 @@ def crawl_campus_news():
             if not href:
                 continue
 
-            # 标题长度过滤
-            if len(title) < 10:
+            # 标题太短过滤
+            if len(title) < 8:
                 continue
 
-            # 只保留新闻正文链接
-            if not (
-                "/2026/" in href
-                or
-                "/xw/" in href
-                or
-                "/zhxw/" in href
-            ):
+            # 过滤无效链接
+            if href.startswith("#"):
+                continue
+
+            if href.startswith("javascript"):
                 continue
 
             full_url = urljoin(
@@ -71,24 +66,40 @@ def crawl_campus_news():
                 href
             )
 
-            print("抓到资讯：", title)
+            # 去重
+            if full_url in seen:
+                continue
 
-            save_news(
+            seen.add(full_url)
 
-                title,
+            # 只保留新闻页
+            if not (
+                "/2026/" in full_url
+                or
+                "/xw/" in full_url
+                or
+                "/zhxw/" in full_url
+            ):
+                continue
 
-                "武汉理工大学校园资讯",
+            news_items.append({
 
-                full_url
-            )
+                "title": title,
 
-            count += 1
+                "summary": "武汉理工大学校园资讯",
 
-            if count >= 20:
+                "url": full_url
+            })
+
+            if len(news_items) >= 20:
                 break
 
-        print(f"资讯抓取完成，共{count}条")
+        print("校园资讯抓取成功：", len(news_items))
+
+        return news_items
 
     except Exception as e:
 
         print("校园资讯抓取失败：", e)
+
+        return []
