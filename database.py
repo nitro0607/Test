@@ -1,6 +1,6 @@
 import sqlite3
 
-DB_NAME = "news.db"
+DB_NAME = "campus_news.db"
 
 
 def init_db():
@@ -10,20 +10,20 @@ def init_db():
     cursor = conn.cursor()
 
     cursor.execute("""
-    CREATE TABLE IF NOT EXISTS news (
 
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        CREATE TABLE IF NOT EXISTS news (
 
-        title TEXT,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
 
-        summary TEXT,
+            title TEXT,
 
-        content TEXT,
+            summary TEXT,
 
-        source_url TEXT,
+            url TEXT UNIQUE,
 
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+
     """)
 
     conn.commit()
@@ -31,35 +31,48 @@ def init_db():
     conn.close()
 
 
-def save_news(title, summary, content, source_url):
+def save_news(title, summary, url):
 
     conn = sqlite3.connect(DB_NAME)
 
     cursor = conn.cursor()
 
     cursor.execute("""
-    INSERT INTO news
-    (title, summary, content, source_url)
-    VALUES (?, ?, ?, ?)
-    """, (title, summary, content, source_url))
+
+        INSERT OR IGNORE INTO news
+        (title, summary, url)
+
+        VALUES (?, ?, ?)
+
+    """, (title, summary, url))
 
     conn.commit()
 
     conn.close()
 
 
-def get_news(limit=20):
+def get_news():
 
     conn = sqlite3.connect(DB_NAME)
 
     cursor = conn.cursor()
 
     cursor.execute("""
-    SELECT id, title, summary, source_url, created_at
-    FROM news
-    ORDER BY created_at DESC
-    LIMIT ?
-    """, (limit,))
+
+        SELECT
+            id,
+            title,
+            summary,
+            url,
+            created_at
+
+        FROM news
+
+        ORDER BY id DESC
+
+        LIMIT 20
+
+    """)
 
     rows = cursor.fetchall()
 
