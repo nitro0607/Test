@@ -2,9 +2,9 @@ const API_BASE =
   "https://test-1-5r5k.onrender.com";
 
 
-// =====================
+// ====================================
 // 校园资讯
-// =====================
+// ====================================
 async function loadNews() {
 
   const list =
@@ -51,9 +51,9 @@ async function loadNews() {
 }
 
 
-// =====================
+// ====================================
 // URL分析
-// =====================
+// ====================================
 async function analyzeUrl() {
 
   const url =
@@ -75,6 +75,7 @@ async function analyzeUrl() {
         method: "POST",
 
         headers: {
+
           "Content-Type":
             "application/json"
         },
@@ -87,54 +88,100 @@ async function analyzeUrl() {
 
     const data = await response.json();
 
+
+    if (data.error) {
+
+      result.innerHTML =
+        `错误：${data.error}`;
+
+      return;
+    }
+
+
     let html = `
 
-      <h3>${data.title}</h3>
+      <h2>${data.title}</h2>
 
-      <p>${data.summary}</p>
+      <div class="summary-box">
 
-      <h4>🔗 页面链接</h4>
+        <h3>🧠 AI总结</h3>
+
+        <p>${data.summary}</p>
+
+      </div>
     `;
 
-    data.links.forEach(link => {
+
+    // 页面链接
+    if (
+      data.links &&
+      data.links.length > 0
+    ) {
 
       html += `
 
-        <p>
+        <div class="link-box">
 
-          <a
-            href="${link.url}"
-            target="_blank"
-          >
-
-            ${link.text || link.url}
-
-          </a>
-
-        </p>
+        <h3>🔗 页面链接</h3>
       `;
-    });
 
-    html += `<h4>📎 附件</h4>`;
+      data.links.forEach(link => {
 
-    data.attachments.forEach(file => {
+        html += `
+
+          <p>
+
+            <a
+              href="${link.url}"
+              target="_blank"
+            >
+
+              ${link.text}
+
+            </a>
+
+          </p>
+        `;
+      });
+
+      html += `</div>`;
+    }
+
+
+    // 页面附件
+    if (
+      data.attachments &&
+      data.attachments.length > 0
+    ) {
 
       html += `
 
-        <p>
+        <div class="attach-box">
 
-          <a
-            href="${file}"
-            target="_blank"
-          >
-
-            ${file}
-
-          </a>
-
-        </p>
+        <h3>📎 页面附件</h3>
       `;
-    });
+
+      data.attachments.forEach(file => {
+
+        html += `
+
+          <p>
+
+            <a
+              href="${file}"
+              target="_blank"
+            >
+
+              ${file}
+
+            </a>
+
+          </p>
+        `;
+      });
+
+      html += `</div>`;
+    }
 
     result.innerHTML = html;
 
@@ -146,9 +193,9 @@ async function analyzeUrl() {
 }
 
 
-// =====================
+// ====================================
 // AI聊天
-// =====================
+// ====================================
 let messages = [
 
   {
@@ -198,6 +245,7 @@ async function sendMessage() {
         method: "POST",
 
         headers: {
+
           "Content-Type":
             "application/json"
         },
