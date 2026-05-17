@@ -52,7 +52,7 @@ async function loadNews() {
 
 
 // ====================================
-// URL分析
+// URL网页分析
 // ====================================
 async function analyzeUrl() {
 
@@ -112,7 +112,9 @@ async function analyzeUrl() {
     `;
 
 
+    // ====================================
     // 页面链接
+    // ====================================
     if (
       data.links &&
       data.links.length > 0
@@ -148,7 +150,9 @@ async function analyzeUrl() {
     }
 
 
+    // ====================================
     // 页面附件
+    // ====================================
     if (
       data.attachments &&
       data.attachments.length > 0
@@ -168,11 +172,11 @@ async function analyzeUrl() {
           <p>
 
             <a
-              href="${file}"
+              href="${file.url}"
               target="_blank"
             >
 
-              ${file}
+              📎 ${file.name}
 
             </a>
 
@@ -194,7 +198,7 @@ async function analyzeUrl() {
 
 
 // ====================================
-// AI聊天
+// AI聊天（多轮）
 // ====================================
 let messages = [
 
@@ -291,5 +295,7 @@ async function sendMessage() {
 }
 
 
+// ====================================
 // 初始化
+// ====================================
 loadNews();
